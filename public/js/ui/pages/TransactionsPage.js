@@ -24,8 +24,6 @@ class TransactionsPage {
    * */
   update() {
     this.render(this.lastOptions);
-    /*В случае, если метод render() был ранее вызван с какими-то опциями, при вызове update() эти опции необходимо передать повторно 
-    <- каким образом это можно проверить?*/
   }
 
   /**
@@ -41,8 +39,10 @@ class TransactionsPage {
       e.preventDefault();
       if (e.target.classList.contains("remove-account")) {
         this.removeAccount();
-      } else if (e.target.classList.contains("btn-danger")) {
-        this.removeTransaction(ev.target.dataset.id);
+      } else if (e.target.closest(".fa-trash")) {
+        this.removeTransaction(
+          e.target.closest(".transaction__remove").dataset.id
+        );
       }
     });
   }
@@ -63,7 +63,6 @@ class TransactionsPage {
           "Вы действительно хотите удалить счет и все связанные транзакции?"
         )
       ) {
-        this.clear();
         const id = document.querySelector("li.active").dataset.id;
         Account.remove(
           {
@@ -108,19 +107,18 @@ class TransactionsPage {
    * в TransactionsPage.renderTransactions()
    * */
   render(options) {
-    if (options) {
-      this.lastOptions = options;
-      Account.get(options.account_id, (err, response) => {
-        if (response.success) {
-          this.renderTitle(response.data.name);
-        }
-      });
-      Transaction.list(options, (err, response) => {
-        if (response.success) {
-          this.renderTransactions(response.data);
-        }
-      });
-    }
+    if (!options) return;
+    this.lastOptions = options;
+
+    Account.get(options.account_id, (err, response) => {
+      this.renderTitle(response.data.name);
+    });
+
+    Transaction.list(options, (err, response) => {
+      if (response && response.success === true) {
+        this.renderTransactions(response.data);
+      }
+    });
   }
 
   /**
@@ -129,17 +127,16 @@ class TransactionsPage {
    * Устанавливает заголовок: «Название счёта»
    * */
   clear() {
-    this.renderTransactions();
+    this.renderTransactions([]);
     this.renderTitle("Название счёта");
+    this.lastOptions = undefined;
   }
 
   /**
    * Устанавливает заголовок в элемент .content-title
    * */
   renderTitle(name) {
-    const accName = document.querySelector(".content-title");
-    accName.textContent = "";
-    accName.insertAdjacentText("afterbegin", name);
+    this.element.querySelector(".content-title").textContent = name;
   }
 
   /**
@@ -160,11 +157,11 @@ class TransactionsPage {
    * item - объект с информацией о транзакции
    * */
   getTransactionHTML(item) {
-    let tranzType;
+    let transactionType;
     item.type === "income"
-      ? (tranzType = "transaction_income")
-      : (tranzType = "transaction_expense");
-    return `<div class="transaction ${tranzType} row">
+      ? (transactionType = "transaction_income")
+      : (transactionType = "transaction_expense");
+    return `<div class="transaction ${transactionType} row">
         <div class="col-md-7 transaction__details">
           <div class="transaction__icon">
               <span class="fa fa-money fa-2x"></span>
@@ -196,14 +193,16 @@ class TransactionsPage {
    * используя getTransactionHTML
    * */
   renderTransactions(dataList) {
-    const tranzList = document.querySelector(".content");
-    tranzList.innerHTML = "";
+    const transactionsList = document.querySelector(".content");
+    transactionsList.innerHTML = "";
     if (dataList) {
-      dataList.forEach((obj) =>
-        tranzList.insertAdjacentHTML("beforeend", this.getTransactionHTML(obj))
+      transactionsList.innerHTML = dataList.reduce(
+        (accumulator, currentValue) =>
+          accumulator + this.getTransactionHTML(currentValue),
+        ""
       );
     } else {
-      for (let element of tranzList.children) {
+      for (let element of transactionsList.children) {
         element.remove();
       }
     }

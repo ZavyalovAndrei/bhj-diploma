@@ -35,22 +35,23 @@ class Sidebar {
    * выходу устанавливает App.setState( 'init' )
    * */
   static initAuthLinks() {
-    const sidebarCtrlBtns = document.querySelectorAll(".sidebar-menu");
-    sidebarCtrlBtns.forEach((button) => {
-      button.addEventListener("click", (e) => {
-        e.preventDefault();
-        switch (e.target.closest("li").classList[1]) {
-          case "menu-item_login":
-            App.getModal("login").open();
-            break;
-          case "menu-item_register":
-            App.getModal("register").open();
-            break;
-          case "menu-item_logout":
-            User.logout((response) => App.setState("init"));
-            break;
-        }
-      });
+    const loginButton = document.querySelector(".menu-item_login");
+    const registerButton = document.querySelector(".menu-item_register");
+    const logoutButton = document.querySelector(".menu-item_logout");
+
+    loginButton.addEventListener("click", (e) => {
+      e.preventDefault();
+      App.getModal("login").open();
+    });
+
+    registerButton.addEventListener("click", (e) => {
+      e.preventDefault();
+      App.getModal("register").open();
+    });
+
+    logoutButton.addEventListener("click", (e) => {
+      e.preventDefault();
+      User.logout((response) => App.setState("init"));
     });
   }
 }

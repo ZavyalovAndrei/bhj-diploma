@@ -1,31 +1,41 @@
-
-const xhr = new XMLHttpRequest();
+/**
+ * Основная функция для совершения запросов
+ * на сервер.
+ * */
 const createRequest = (options = {}) => {
-  if (options && options.data && typeof options.data === 'object') {
-    const xhr = new XMLHttpRequest();
-    let formData = new FormData();
-    let url = options.url;
-    if (options.method !== 'GET') {
-      Object.entries(options.data).forEach(([key, value]) =>
-        formData.append(key, value)
-      );
-    } else if (!url.includes('/account')) {
-      formData = '';
-      url += '?';
-      Object.entries(options.data).forEach(
-        ([key, value]) => (url += `${key}=${value}&`)
-      );
-      url = url.slice(0, -1);
+  const xhr = new XMLHttpRequest();
+  xhr.responseType = "json";
+  let { url, data, method = "GET", callback } = options;
+  const formData = new FormData();
+  if (method === "GET") {
+    url = url + "?";
+    for (let key in data) {
+      url += key + "=" + data[key] + "&";
     }
-    try {
-      xhr.open(options.method, url);
-      xhr.send(formData);
-    } catch (err) {
-      options.callback(err, null);
+    url = url.slice(0, -1);
+  } else {
+    for (let key in data) {
+      formData.append(key, data[key]);
     }
-    xhr.responseType = 'json';
-    xhr.addEventListener('load', () => {
-      options.callback(null, xhr.response);
-    });
   }
+  xhr.open(method, url);
+  xhr.send(formData);
+  xhr.onerror = function () {
+    if (typeof callback === "function") {
+      callback(new Error("Произошла ошибка при загрузке данных на сервер!"));
+    }
+  };
+  xhr.addEventListener("readystatechange", () => {
+    if (xhr.readyState == xhr.DONE) {
+      if (xhr.status === 200) {
+        if (typeof callback === "function") {
+          callback(null, xhr.response);
+        }
+      } else {
+        if (typeof callback === "function") {
+          callback(new Error(`Request failed with status: ${xhr.status}`));
+        }
+      }
+    }
+  });
 };
