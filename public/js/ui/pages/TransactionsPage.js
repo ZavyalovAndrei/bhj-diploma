@@ -39,9 +39,9 @@ class TransactionsPage {
       e.preventDefault();
       if (e.target.classList.contains("remove-account")) {
         this.removeAccount();
-      } else if (e.target.closest(".fa-trash")) {
+      } else if (e.target.closest("button.transaction__remove")) {
         this.removeTransaction(
-          e.target.closest(".transaction__remove").dataset.id
+          e.target.closest("button.transaction__remove").dataset.id
         );
       }
     });
@@ -57,13 +57,15 @@ class TransactionsPage {
    * для обновления приложения
    * */
   removeAccount() {
-    if (this.lastOptions) {
+    if (!this.lastOptions) {
+      return;
+    } else {
       if (
         window.confirm(
           "Вы действительно хотите удалить счет и все связанные транзакции?"
         )
       ) {
-        const id = document.querySelector("li.active").dataset.id;
+        const id = this.lastOptions.account_id;
         Account.remove(
           {
             id: id,
